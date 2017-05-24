@@ -57,7 +57,7 @@ void demo(size_t N, std::string &mode) {
       else if (mode == "sequential" || mode == "shuffle")
         values[i] = i;
       else if (mode == "rev_sequential")
-        values[i] = N - i;
+        values[i] = N - i + 10000000000;
       else {
         std::cerr << "unrecognized mode: " << mode << std::endl;
         ::exit(1);
