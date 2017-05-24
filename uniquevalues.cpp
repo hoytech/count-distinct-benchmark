@@ -57,7 +57,7 @@ void demo(size_t N, std::string &mode) {
       else if (mode == "sequential" || mode == "shuffle")
         values[i] = i;
       else if (mode == "rev_sequential")
-        values[i] = N - i + 10000000000;
+        values[i] = N - i + 10000000000; // offset just to demonstrate judy doesn't cast to uint32_t or something (see blog post)
       else {
         std::cerr << "unrecognized mode: " << mode << std::endl;
         ::exit(1);
