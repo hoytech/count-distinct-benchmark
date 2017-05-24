@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include "benchmark.h"
 #include <Judy.h>
+#include <random>
+#include <algorithm>
 
 size_t distinct_count_hash(const uint64_t * values, size_t howmany) {
   std::unordered_set<uint64_t> hash(values, values + howmany);
@@ -52,7 +54,7 @@ void demo(size_t N, std::string &mode) {
         values[i] = (((uint16_t)rand()) | ((uint32_t)rand() << 16) | ((uint64_t)rand()<<32) |((uint64_t)rand()<<48)) % N;
       else if (mode == "really_dense_random")
         values[i] = (((uint16_t)rand()) | ((uint32_t)rand() << 16) | ((uint64_t)rand()<<32) |((uint64_t)rand()<<48)) % (N / 10);
-      else if (mode == "sequential")
+      else if (mode == "sequential" || mode == "shuffle")
         values[i] = i;
       else if (mode == "rev_sequential")
         values[i] = N - i;
@@ -60,6 +62,11 @@ void demo(size_t N, std::string &mode) {
         std::cerr << "unrecognized mode: " << mode << std::endl;
         ::exit(1);
       }
+    }
+    if (mode == "shuffle") {
+      std::random_device rd;
+      std::mt19937 g(rd());
+      std::shuffle(values, values + N, g);
     }
     values[N/2] = values[0];
     values[N-1] = values[1];
