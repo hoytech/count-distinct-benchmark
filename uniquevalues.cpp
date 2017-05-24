@@ -1,4 +1,11 @@
-// g++ -O3 -o uniquevalues uniquevalues.cpp  -std=c++11 -Wall -Wextra
+//
+// Original:
+//   http://lemire.me/blog/2017/05/23/counting-exactly-the-number-of-distinct-elements-sorted-arrays-vs-hash-sets/
+//   https://github.com/lemire/Code-used-on-Daniel-Lemire-s-blog/tree/master/2017/05/23
+//
+// g++ -O3 -o uniquevalues uniquevalues.cpp  -std=c++11 -Wall -Wextra -lJudy
+//
+
 #include <iostream>
 #include <algorithm>
 #include <unordered_set>
@@ -6,6 +13,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "benchmark.h"
+#include <Judy.h>
 
 size_t distinct_count_hash(const uint64_t * values, size_t howmany) {
   std::unordered_set<uint64_t> hash(values, values + howmany);
@@ -18,11 +26,37 @@ size_t distinct_count_sort(const uint64_t * values, size_t howmany) {
   return std::unique(array.begin(), array.end()) - array.begin();
 }
 
-void demo(size_t N) {
+size_t distinct_count_judy(const uint64_t * values, size_t howmany) {
+  void *j_array = nullptr;
+
+  for (; howmany; values++, howmany--) {
+    int ret;
+    J1S(ret, j_array, *values);
+  }
+
+  size_t count;
+  J1C(count, j_array, 0, -1);
+  return count;
+}
+
+void demo(size_t N, std::string &mode) {
     std::cout << "N = " << N <<std::endl;
     uint64_t * values = new uint64_t[N];
     for(size_t i = 0; i < N; ++i) {
-      values[i] = ((uint16_t)rand()) | ((uint32_t)rand() << 16) | ((uint64_t)rand()<<32) |((uint64_t)rand()<<48);
+      if (mode == "original")
+        values[i] = ((uint16_t)rand()) | ((uint32_t)rand() << 16) | ((uint64_t)rand()<<32) |((uint64_t)rand()<<48);
+      else if (mode == "dense_random")
+        values[i] = (((uint16_t)rand()) | ((uint32_t)rand() << 16) | ((uint64_t)rand()<<32) |((uint64_t)rand()<<48)) % N;
+      else if (mode == "really_dense_random")
+        values[i] = (((uint16_t)rand()) | ((uint32_t)rand() << 16) | ((uint64_t)rand()<<32) |((uint64_t)rand()<<48)) % (N / 10);
+      else if (mode == "sequential")
+        values[i] = i;
+      else if (mode == "rev_sequential")
+        values[i] = N - i;
+      else {
+        std::cerr << "unrecognized mode: " << mode << std::endl;
+        ::exit(1);
+      }
     }
     values[N/2] = values[0];
     values[N-1] = values[1];
@@ -31,8 +65,16 @@ void demo(size_t N) {
     const int repeat = 1;
     BEST_TIME(distinct_count_hash(values,N), expected, , repeat, N, true);
     BEST_TIME(distinct_count_sort(values,N), expected, , repeat, N, true);
+    BEST_TIME(distinct_count_judy(values,N), expected, , repeat, N, true);
     delete[] values;
 }
-int main() {
-  for(size_t N = 10; N < 100000000; N*=10) demo(N);
+int main(int argc, char **argv) {
+  if (argc < 2) {
+    std::cerr << "Need a mode argument" << std::endl;
+    ::exit(1);
+  }
+
+  std::string mode(argv[1]);
+
+  for(size_t N = 10; N < 100000000; N*=10) demo(N, mode);
 }
