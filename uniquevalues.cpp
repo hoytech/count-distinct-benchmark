@@ -34,8 +34,11 @@ size_t distinct_count_judy(const uint64_t * values, size_t howmany) {
     J1S(ret, j_array, *values);
   }
 
-  size_t count;
+  size_t count, bytes_freed;
+
   J1C(count, j_array, 0, -1);
+  J1FA(bytes_freed, j_array);
+
   return count;
 }
 
